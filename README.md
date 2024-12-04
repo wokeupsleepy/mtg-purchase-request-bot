@@ -1,8 +1,11 @@
 # mtg-purchase-request-bot
 
+This requires Python 3 and pip.
+
 Required packages:
 discord.py (https://discordpy.readthedocs.io/en/stable/quickstart.html)
 python-dotenv
+mtgsdk (https://github.com/MagicTheGathering/mtg-sdk-python)
 
 Here are some docs: https://discordpy.readthedocs.io/en/stable/intro.html#installing
 
