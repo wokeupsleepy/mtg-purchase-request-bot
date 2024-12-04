@@ -1,3 +1,4 @@
 .env
 log.txt
 purchase_requests.csv
+__pycache__/

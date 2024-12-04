@@ -5,19 +5,18 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
+from CardNameChecker import * 
 
+# NOTE: This here is just some set up
 load_dotenv()
-
 discord_key = os.getenv("DISCORD_KEY")
-
 intents = discord.Intents.default()
-
 intents.members = True
 intents.message_content = True
-
 client = commands.Bot(command_prefix='?', description="this is just a test bot", intents=intents)
 bot = client.tree
 
+# NOTE: These are the actual bot functions
 def writeToFile(line, file="log.txt"):
     f = open(file, "a")
     f.write("\n")
@@ -47,11 +46,6 @@ async def test(interaction: discord.Interaction):
     """This is another test slash action"""
     await interaction.response.send_message("You can't see me *John Cena handwave*")
 
-# @bot.command(name="add")
-# async def add(interaction: discord.Interaction, left: int, right: int):
-#     """Adds two numbers together."""
-#     await interaction.response.send_message(left + right)
-
 # NOTE: I think maybe I should implement some sort of rate-limiting? Maybe it's a setting that can be done on the Discord developer page side?
 @bot.command(name="say")
 @app_commands.describe(output_phrase = "This will write to a log file that I (Tom) will read")
@@ -68,17 +62,27 @@ async def say(interaction: discord.Interaction, output_phrase: str):
 async def purchase_request(interaction: discord.Interaction, card_name: str, quantity: int=1, printing: str=""):
     """Use this to make a purchase request"""
     returnMessage = ""
-    if card_name == "":
-        returnMessage = f"No card has been selected, purchase request has not been made."
-    else:
-        returnMessage = f"{interaction.user.name} requested {quantity} copy/copies of {card_name}"
+    try:
+        if card_name.strip() == "":
+            returnMessage = f"No card name has been supplied, purchase request has not been made."
+            raise Exception(returnMessage)
+        else:
+            checkerInstance = CardNameChecker()
+            discoveredCards = checkerInstance.find_cards_by_name_set(card_name, printing)
+            # NOTE TODO: We may need to handle cases where there are multiple distinct names, figure this out later; for example, there is the card "Fury" and other cards with "Fury" in its name
+            firstCardName = discoveredCards[0].name
 
-    if printing != "":
-        returnMessage = returnMessage + f" from the set: {printing}"
+            if len(discoveredCards) <= 0:
+                raise Exception("No card found for given parameters; review your inputs")
+            else:            
+                returnMessage = f"{interaction.user.name} requested {quantity} copy/copies of {firstCardName}"
+                if printing != "":
+                    returnMessage = returnMessage + f" from the set: {printing}"
+                purchaseRequestCsv = f"{interaction.user.name},'{firstCardName}',{quantity},'{printing}'"
+                writeToFile(purchaseRequestCsv,"purchase_requests.csv")
 
-    purchaseRequestCsv = f"{interaction.user.name},{card_name},{quantity},{printing}"
-    writeToFile(purchaseRequestCsv,"purchase_requests.csv")
-
-    await interaction.response.send_message(returnMessage)
+        await interaction.response.send_message(returnMessage)
+    except Exception as e:
+        await interaction.response.send_message(f"ERROR in purchase_request: {e}")
 
 client.run(discord_key)
