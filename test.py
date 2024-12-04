@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import discord
 from discord import ui
 from discord import app_commands
@@ -23,7 +24,6 @@ def writeToFile(line, file="log.txt"):
     f.write(line)
     f.close()
     
-
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
@@ -39,20 +39,22 @@ async def on_message(message):
         return
 
     if message.content.startswith('$hello'):
-        await message.channel.send('Hello see this updated message!')
+        utc_time = datetime.now(timezone.utc)
+        await message.channel.send(f'Hello, this is a quick heartbeat ping, the current time is: {utc_time}')
 
-@bot.command(name="poopy")
-async def poopy(interaction: discord.Interaction):
-    """This is another test action"""
-    await interaction.response.send_message("so silly")
+@bot.command(name="test")
+async def test(interaction: discord.Interaction):
+    """This is another test slash action"""
+    await interaction.response.send_message("You can't see me *John Cena handwave*")
 
-@bot.command(name="add")
-async def add(interaction: discord.Interaction, left: int, right: int):
-    """Adds two numbers together."""
-    await interaction.response.send_message(left + right)
+# @bot.command(name="add")
+# async def add(interaction: discord.Interaction, left: int, right: int):
+#     """Adds two numbers together."""
+#     await interaction.response.send_message(left + right)
 
+# NOTE: I think maybe I should implement some sort of rate-limiting? Maybe it's a setting that can be done on the Discord developer page side?
 @bot.command(name="say")
-@app_commands.describe(output_phrase = "what you want?")
+@app_commands.describe(output_phrase = "This will write to a log file that I (Tom) will read")
 async def say(interaction: discord.Interaction, output_phrase: str):
     """test output phrase"""
     outputLine = f"{interaction.user.name} instructed bot to say '{output_phrase}'"
