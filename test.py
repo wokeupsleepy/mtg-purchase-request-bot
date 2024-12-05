@@ -16,12 +16,24 @@ intents.message_content = True
 client = commands.Bot(command_prefix='?', description="this is just a test bot", intents=intents)
 bot = client.tree
 
+purchaseRequestFileName = "purchase_requests.csv"
+
 # NOTE: These are the actual bot functions
 def writeToFile(line, file="log.txt"):
-    f = open(file, "a")
-    f.write("\n")
-    f.write(line)
-    f.close()
+    file = open(file, "r+")
+    lineCounter = 0 
+    # Reading from file
+    fileContents = file.read()
+    colist = fileContents.split("\n")
+    
+    for i in colist:
+        if i:
+            lineCounter += 1
+
+    # NOTE: This is sort of a bad way to generate an ID, I think we should have some sort of metadata file
+    file.write(f"{lineCounter}|{line}")
+    file.write("\n")
+    file.close()
     
 @client.event
 async def on_ready():
@@ -78,11 +90,41 @@ async def purchase_request(interaction: discord.Interaction, card_name: str, qua
                 returnMessage = f"{interaction.user.name} requested {quantity} copy/copies of {firstCardName}"
                 if printing != "":
                     returnMessage = returnMessage + f" from the set: {printing}"
-                purchaseRequestCsv = f"{interaction.user.name},'{firstCardName}',{quantity},'{printing}'"
-                writeToFile(purchaseRequestCsv,"purchase_requests.csv")
+                purchaseRequestCsv = f'{interaction.user.name}|"{firstCardName}"|{quantity}|"{printing}"'
+                writeToFile(purchaseRequestCsv, purchaseRequestFileName)
 
         await interaction.response.send_message(returnMessage)
     except Exception as e:
         await interaction.response.send_message(f"ERROR in purchase_request: {e}")
+
+
+@bot.command(name="get_all_requests")
+@app_commands.describe(user = "Specify the user you want records for; this is optional, if no value is supplied then all requests are returned")
+async def get_all_requests(interaction: discord.Interaction, user: str=""):
+    """Use this to list out all purchase requests, this is useful for finding what you've asked for."""
+    file = open(purchaseRequestFileName, "r")
+    # NOTE: We can maybe format this if necessary
+    fileContents = file.read()
+    file.close()
+
+    if user != "":
+        fileLines = fileContents.split("\n")
+        userRequests = []
+        
+        for line in fileLines:
+            # NOTE: In lineArray, the set of values goes ID, user, cardname, quantity, printing/set
+            lineArray = line.split("|")
+            if len(lineArray) > 1:
+                if lineArray[1] == user:
+                    userRequests.append(line)
+        
+        userRequestsContents = ""
+        for request in userRequests:
+            userRequestsContents += request
+            userRequestsContents += "\n"
+        
+        await interaction.response.send_message(userRequestsContents)
+    else:
+        await interaction.response.send_message(fileContents)
 
 client.run(discord_key)
