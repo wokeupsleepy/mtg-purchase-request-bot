@@ -62,19 +62,28 @@ async def on_message(message):
         utc_time = datetime.now(timezone.utc)
         await message.channel.send(f'Hello, this is a quick heartbeat ping, the current time is: {utc_time}')
 
+@bot.command(name="help_purchase_request_bot")
+async def help_purchase_request_bot(interaction: discord.Interaction):
+    """Here are the help/instructions if you want them"""
+    
+    message = "Hello! I've made this little bot to record down card requests. I think I can use this to make batches of orders from TCGPlayer (that's the eventual goal anyway). If you have suggestions, let me know!"
+    message += "\nUse slash commands ('\\') for this bot. You can add purchase requests with '\\purchase_request', list out requests you've made with '\\get_requests', and delete requests you've made with '\\delete_request_by_cardname'. "
+    message += "\nYou can also send a message to the bot or report issues with '\\report', this will write your message to a log file which I can read."
+    await interaction.response.send_message(message)
+
 @bot.command(name="test")
 async def test(interaction: discord.Interaction):
     """This is another test slash action"""
     await interaction.response.send_message("You can't see me *John Cena handwave*")
 
 # NOTE: I think maybe I should implement some sort of rate-limiting? Maybe it's a setting that can be done on the Discord developer page side?
-@bot.command(name="say")
-@app_commands.describe(output_phrase = "This will write to a log file that I (Tom) will read")
-async def say(interaction: discord.Interaction, output_phrase: str):
+@bot.command(name="report")
+@app_commands.describe(message = "This will write to a log file that I (Tom) will read")
+async def report(interaction: discord.Interaction, message: str):
     """test output phrase"""
-    outputLine = f"{interaction.user.name} instructed bot to say '{output_phrase}'"
+    outputLine = f"{interaction.user.name}, {datetime.now(timezone.utc)}: '{message}'"
     writeToFile(outputLine)
-    await interaction.response.send_message(outputLine)
+    await interaction.response.send_message("Thanks for your message! It's been logged.")
 
 @bot.command(name="purchase_request")
 @app_commands.describe(card_name = "This is the name of the card you want.")
