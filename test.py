@@ -18,12 +18,11 @@ bot = client.tree
 
 purchaseRequestFileName = "purchase_requests"
 
+# NOTE: These are helper functions
 def constructFileNameForUser(user: str):
     return f"{purchaseRequestFileName}_{user}.csv"
 
-# NOTE: These are the actual bot functions
 def writeToFile(line, file="log.txt"):
-
     try:
         createFileIfNotExists = open(file, "x")
     except Exception as e:
@@ -43,7 +42,8 @@ def writeToFile(line, file="log.txt"):
     file.write(f"{lineCounter}|{line}")
     file.write("\n")
     file.close()
-    
+
+# NOTE: These are the actual bot functions
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
@@ -111,37 +111,49 @@ async def purchase_request(interaction: discord.Interaction, card_name: str, qua
 @bot.command(name="get_requests")
 @app_commands.describe(user = "Specify the user you want records for")
 async def get_requests(interaction: discord.Interaction, user: str):
+    """Find purchase requests by user"""
     try:
         if len(user) > 32 or '/' in user or '\\' in user:
             raise Exception("Invalid username")
         
-        requestsFileName = constructFileNameForUser(interaction.user.name)
-        """Use this to list out all purchase requests, this is useful for finding what you've asked for."""
+        requestsFileName = constructFileNameForUser(user)
         file = open(requestsFileName, "r")
         # NOTE: We can maybe format this if necessary
         fileContents = file.read()
         file.close()
 
-        if user != "":
-            fileLines = fileContents.split("\n")
-            userRequests = []
-            
-            for line in fileLines:
-                # NOTE: In lineArray, the set of values goes ID, user, cardname, quantity, printing/set
-                lineArray = line.split("|")
-                if len(lineArray) > 1:
-                    if lineArray[1] == user:
-                        userRequests.append(line)
-            
-            userRequestsContents = ""
-            for request in userRequests:
-                userRequestsContents += request
-                userRequestsContents += "\n"
-            
-            await interaction.response.send_message(userRequestsContents)
-        else:
-            await interaction.response.send_message(fileContents)
+        await interaction.response.send_message(fileContents)
     except Exception as e:
         await interaction.response.send_message(e)
 
+@bot.command(name="delete_request_by_cardname")
+@app_commands.describe(card_name = "The name of the card you want to delete requests for")
+async def delete_request_by_cardname(interaction: discord.Interaction, card_name: str):
+    """Delete purchase requests by card name, you can only delete your own requests"""
+    try:
+        requestsFileName = constructFileNameForUser(interaction.user.name)
+        file = open(requestsFileName, "r")
+        # NOTE: We can maybe format this if necessary
+        fileContents = file.read()
+        file.close()
+        fileLines = fileContents.split("\n")
+
+        newFileContents = ""
+        for line in fileLines:
+            # NOTE: In lineArray, the set of values goes ID, user, cardname, quantity, printing/set
+            lineArray = line.split("|")
+            if len(lineArray) > 2:
+                purchaseRequestCardName = lineArray[2]
+                if purchaseRequestCardName != f'"{card_name}"':
+                    newFileContents += line
+                    newFileContents += "\n"
+        
+        replacementFile = open(requestsFileName, "w")
+        replacementFile.write(newFileContents)
+        replacementFile.close()
+
+        await interaction.response.send_message("Request(s) deleted successfully")
+    except Exception as e:
+        await interaction.response.send_message(e)
+    
 client.run(discord_key)
