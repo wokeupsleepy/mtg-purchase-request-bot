@@ -16,10 +16,19 @@ intents.message_content = True
 client = commands.Bot(command_prefix='?', description="this is just a test bot", intents=intents)
 bot = client.tree
 
-purchaseRequestFileName = "purchase_requests.csv"
+purchaseRequestFileName = "purchase_requests"
+
+def constructFileNameForUser(user: str):
+    return f"{purchaseRequestFileName}_{user}.csv"
 
 # NOTE: These are the actual bot functions
 def writeToFile(line, file="log.txt"):
+
+    try:
+        createFileIfNotExists = open(file, "x")
+    except Exception as e:
+        fileAlreadyExists = "nothing needed here, I just need a way to make the file if it doesn't exist already"
+
     file = open(file, "r+")
     lineCounter = 0 
     # Reading from file
@@ -73,6 +82,7 @@ async def say(interaction: discord.Interaction, output_phrase: str):
 @app_commands.describe(printing = "This is the set you want singles to be from, by default the set won't matter.")
 async def purchase_request(interaction: discord.Interaction, card_name: str, quantity: int=1, printing: str=""):
     """Use this to make a purchase request"""
+    user = interaction.user.name
     returnMessage = ""
     try:
         if card_name.strip() == "":
@@ -87,22 +97,23 @@ async def purchase_request(interaction: discord.Interaction, card_name: str, qua
             if len(discoveredCards) <= 0:
                 raise Exception("No card found for given parameters; review your inputs")
             else:            
-                returnMessage = f"{interaction.user.name} requested {quantity} copy/copies of {firstCardName}"
+                returnMessage = f"{user} requested {quantity} copy/copies of {firstCardName}"
                 if printing != "":
                     returnMessage = returnMessage + f" from the set: {printing}"
-                purchaseRequestCsv = f'{interaction.user.name}|"{firstCardName}"|{quantity}|"{printing}"'
-                writeToFile(purchaseRequestCsv, purchaseRequestFileName)
+                purchaseRequestCsv = f'{user}|"{firstCardName}"|{quantity}|"{printing}"'
+                writeToFile(purchaseRequestCsv, constructFileNameForUser(user))
 
         await interaction.response.send_message(returnMessage)
     except Exception as e:
         await interaction.response.send_message(f"ERROR in purchase_request: {e}")
 
 
-@bot.command(name="get_all_requests")
-@app_commands.describe(user = "Specify the user you want records for; this is optional, if no value is supplied then all requests are returned")
-async def get_all_requests(interaction: discord.Interaction, user: str=""):
+@bot.command(name="get_requests")
+@app_commands.describe(user = "Specify the user you want records for")
+async def get_requests(interaction: discord.Interaction, user: str):
+    requestsFileName = constructFileNameForUser(interaction.user.name)
     """Use this to list out all purchase requests, this is useful for finding what you've asked for."""
-    file = open(purchaseRequestFileName, "r")
+    file = open(requestsFileName, "r")
     # NOTE: We can maybe format this if necessary
     fileContents = file.read()
     file.close()
@@ -126,14 +137,5 @@ async def get_all_requests(interaction: discord.Interaction, user: str=""):
         await interaction.response.send_message(userRequestsContents)
     else:
         await interaction.response.send_message(fileContents)
-
-@bot.command(name="delete_requests_by_user_and_cardname")
-@app_commands.describe(user = "Specify the user you want to delete records for")
-@app_commands.describe(card_name = "Specify the cards you want to delete records for")
-async def delete_requests_by_user_and_cardname(interaction: discord.Interaction, user: str, card_name: str):
-    """Use this to delete specified purchase requests"""
-    file = open(purchaseRequestFileName, "r")
-    # NOTE: We can maybe format this if necessary
-    fileContents = file.read()
 
 client.run(discord_key)

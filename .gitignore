@@ -1,4 +1,5 @@
 .env
 log.txt
 purchase_requests.csv
+purchase_requests*.csv
 __pycache__/
