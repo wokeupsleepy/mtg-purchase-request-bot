@@ -67,7 +67,7 @@ async def help_purchase_request_bot(interaction: discord.Interaction):
     """Here are the help/instructions if you want them"""
     
     message = "Hello! I've made this little bot to record down card requests. I think I can use this to make batches of orders from TCGPlayer (that's the eventual goal anyway). If you have suggestions, let me know!"
-    message += "\nUse slash commands ('\\') for this bot. You can add purchase requests with '\\purchase_request', list out requests you've made with '\\get_requests', and delete requests you've made with '\\delete_request_by_cardname'. "
+    message += "\nThis bot uses slash commands. You can add purchase requests with '\\purchase_request', list out requests you've made with '\\get_requests', and delete requests you've made with '\\delete_request_by_cardname'. "
     message += "\nYou can also send a message to the bot or report issues with '\\report', this will write your message to a log file which I can read."
     await interaction.response.send_message(message)
 
