@@ -111,31 +111,37 @@ async def purchase_request(interaction: discord.Interaction, card_name: str, qua
 @bot.command(name="get_requests")
 @app_commands.describe(user = "Specify the user you want records for")
 async def get_requests(interaction: discord.Interaction, user: str):
-    requestsFileName = constructFileNameForUser(interaction.user.name)
-    """Use this to list out all purchase requests, this is useful for finding what you've asked for."""
-    file = open(requestsFileName, "r")
-    # NOTE: We can maybe format this if necessary
-    fileContents = file.read()
-    file.close()
+    try:
+        if len(user) > 32 or '/' in user or '\\' in user:
+            raise Exception("Invalid username")
+        
+        requestsFileName = constructFileNameForUser(interaction.user.name)
+        """Use this to list out all purchase requests, this is useful for finding what you've asked for."""
+        file = open(requestsFileName, "r")
+        # NOTE: We can maybe format this if necessary
+        fileContents = file.read()
+        file.close()
 
-    if user != "":
-        fileLines = fileContents.split("\n")
-        userRequests = []
-        
-        for line in fileLines:
-            # NOTE: In lineArray, the set of values goes ID, user, cardname, quantity, printing/set
-            lineArray = line.split("|")
-            if len(lineArray) > 1:
-                if lineArray[1] == user:
-                    userRequests.append(line)
-        
-        userRequestsContents = ""
-        for request in userRequests:
-            userRequestsContents += request
-            userRequestsContents += "\n"
-        
-        await interaction.response.send_message(userRequestsContents)
-    else:
-        await interaction.response.send_message(fileContents)
+        if user != "":
+            fileLines = fileContents.split("\n")
+            userRequests = []
+            
+            for line in fileLines:
+                # NOTE: In lineArray, the set of values goes ID, user, cardname, quantity, printing/set
+                lineArray = line.split("|")
+                if len(lineArray) > 1:
+                    if lineArray[1] == user:
+                        userRequests.append(line)
+            
+            userRequestsContents = ""
+            for request in userRequests:
+                userRequestsContents += request
+                userRequestsContents += "\n"
+            
+            await interaction.response.send_message(userRequestsContents)
+        else:
+            await interaction.response.send_message(fileContents)
+    except Exception as e:
+        await interaction.response.send_message(e)
 
 client.run(discord_key)
