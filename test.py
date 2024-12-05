@@ -127,4 +127,13 @@ async def get_all_requests(interaction: discord.Interaction, user: str=""):
     else:
         await interaction.response.send_message(fileContents)
 
+@bot.command(name="delete_requests_by_user_and_cardname")
+@app_commands.describe(user = "Specify the user you want to delete records for")
+@app_commands.describe(card_name = "Specify the cards you want to delete records for")
+async def delete_requests_by_user_and_cardname(interaction: discord.Interaction, user: str, card_name: str):
+    """Use this to delete specified purchase requests"""
+    file = open(purchaseRequestFileName, "r")
+    # NOTE: We can maybe format this if necessary
+    fileContents = file.read()
+
 client.run(discord_key)
